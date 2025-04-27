@@ -1,0 +1,38 @@
+2025-04-27 10:16:51,374 - DEBUG - Starting new HTTPS connection (1): serpapi.com:443
+2025-04-27 10:16:54,161 - DEBUG - https://serpapi.com:443 "GET /search?q=jim+rohn+filetype%3Apdf&api_key=fdb20e84adcafd76bfed7714bf3dbff659c6deaa19193d4bc0c5697ceadd83cf&engine=google&tbs=qdr%3Ay&output=json&source=python HTTP/1.1" 200 None
+2025-04-27 10:16:57,606 - DEBUG - Starting new HTTPS connection (1): util.wickedlocal.com:443
+2025-04-27 10:17:00,240 - DEBUG - https://util.wickedlocal.com:443 "GET /files/textbook-solutions/Resources:E2E1/HomePages/Jim-Rohn-The-Day-That-Turns-Your-Life-Around.pdf HTTP/1.1" 200 859
+2025-04-27 10:17:00,241 - ERROR - Error retrieving metadata: PdfFileReader is deprecated and was removed in PyPDF2 3.0.0. Use PdfReader instead.
+2025-04-27 10:17:08,494 - DEBUG - Starting new HTTPS connection (1): motivi.ge:443
+2025-04-27 10:17:14,387 - DEBUG - https://motivi.ge:443 "GET /books/jim/quotes.pdf HTTP/1.1" 200 1181234
+2025-04-27 10:17:15,227 - ERROR - Error retrieving metadata: PdfFileReader is deprecated and was removed in PyPDF2 3.0.0. Use PdfReader instead.
+2025-04-27 10:17:20,112 - DEBUG - Starting new HTTPS connection (1): cdn.prod.website-files.com:443
+2025-04-27 10:17:20,989 - DEBUG - https://cdn.prod.website-files.com:443 "GET /65ffdc72fdfbc3c2dd9a4d48/66f0a49a0a2e7a10653b4d95_43035580865.pdf HTTP/1.1" 200 39882
+2025-04-27 10:17:20,992 - ERROR - Error retrieving metadata: PdfFileReader is deprecated and was removed in PyPDF2 3.0.0. Use PdfReader instead.
+2025-04-27 10:17:48,000 - DEBUG - Starting new HTTPS connection (1): cdn.bookey.app:443
+2025-04-27 10:17:49,102 - DEBUG - https://cdn.bookey.app:443 "GET /files/pdf/book/en/twelve-pillars.pdf HTTP/1.1" 200 None
+2025-04-27 10:17:49,252 - ERROR - Error downloading PDF: division by zero
+2025-04-27 10:18:20,155 - DEBUG - Starting new HTTPS connection (1): util.wickedlocal.com:443
+2025-04-27 10:18:21,547 - DEBUG - https://util.wickedlocal.com:443 "GET /files/textbook-solutions/Resources:E2E1/HomePages/Jim-Rohn-The-Day-That-Turns-Your-Life-Around.pdf HTTP/1.1" 200 859
+2025-04-27 10:18:21,554 - INFO - Downloaded PDF from https://util.wickedlocal.com/files/textbook-solutions/Resources:E2E1/HomePages/Jim-Rohn-The-Day-That-Turns-Your-Life-Around.pdf to .\Jim-Rohn-The-Day-That-Turns-Your-Life-Around.pdf
+2025-04-27 10:19:23,515 - DEBUG - Starting new HTTPS connection (1): motivi.ge:443
+2025-04-27 10:19:24,070 - DEBUG - https://motivi.ge:443 "GET /books/jim/seasons.pdf HTTP/1.1" 200 1469311
+2025-04-27 10:19:25,222 - INFO - Downloaded PDF from https://motivi.ge/books/jim/seasons.pdf to .\seasons.pdf
+2025-04-27 10:22:38,543 - DEBUG - Starting new HTTPS connection (1): serpapi.com:443
+2025-04-27 10:22:40,214 - DEBUG - https://serpapi.com:443 "GET /search?q=Rich+dad%2C+poor+dad+filetype%3Apdf&api_key=fdb20e84adcafd76bfed7714bf3dbff659c6deaa19193d4bc0c5697ceadd83cf&engine=google&tbs=qdr%3Ay&output=json&source=python HTTP/1.1" 200 None
+2025-04-27 10:22:52,347 - DEBUG - Starting new HTTPS connection (1): cdn.prod.website-files.com:443
+2025-04-27 10:22:53,108 - DEBUG - https://cdn.prod.website-files.com:443 "GET /66f3eac3760c536281199f50/67b4c4563d40b04402d7daa0_pulasovefijarip.pdf HTTP/1.1" 200 108534
+2025-04-27 10:22:53,267 - INFO - Downloaded PDF from https://cdn.prod.website-files.com/66f3eac3760c536281199f50/67b4c4563d40b04402d7daa0_pulasovefijarip.pdf to .\67b4c4563d40b04402d7daa0_pulasovefijarip.pdf
+2025-04-27 10:22:54,976 - DEBUG - Starting new HTTPS connection (1): cdn.prod.website-files.com:443
+2025-04-27 10:22:55,359 - DEBUG - https://cdn.prod.website-files.com:443 "GET /66f3eac3760c536281199f50/67b4c4563d40b04402d7daa0_pulasovefijarip.pdf HTTP/1.1" 200 108534
+2025-04-27 10:22:55,491 - ERROR - Error previewing PDF: No module named 'pdf2image'
+2025-04-27 14:03:47,968 - DEBUG - Starting new HTTPS connection (1): serpapi.com:443
+2025-04-27 14:03:51,375 - DEBUG - https://serpapi.com:443 "GET /search?q=The+subtle+art+of+not+giving+a+fuck+filetype%3Apdf&api_key=fdb20e84adcafd76bfed7714bf3dbff659c6deaa19193d4bc0c5697ceadd83cf&engine=google&tbs=qdr%3Ay&output=json&source=python HTTP/1.1" 200 None
+2025-04-27 14:03:55,317 - DEBUG - Starting new HTTPS connection (1): serpapi.com:443
+2025-04-27 14:03:55,704 - DEBUG - https://serpapi.com:443 "GET /search?q=The+subtle+art+of+not+giving+a+fuck+filetype%3Apdf&api_key=fdb20e84adcafd76bfed7714bf3dbff659c6deaa19193d4bc0c5697ceadd83cf&engine=google&tbs=qdr%3Ay&output=json&source=python HTTP/1.1" 200 None
+2025-04-27 14:03:58,241 - DEBUG - Starting new HTTPS connection (1): azon.market:443
+2025-04-27 14:04:00,181 - DEBUG - https://azon.market:443 "GET /image/catalog/supplier30/8aa/8aa4ccc9ece7ec2c6714a44cfa4144a1.pdf HTTP/1.1" 200 308099
+2025-04-27 14:04:01,885 - ERROR - Error previewing PDF: No module named 'pdf2image'
+2025-04-27 14:04:06,672 - DEBUG - Starting new HTTPS connection (1): irp.cdn-website.com:443
+2025-04-27 14:04:08,021 - DEBUG - https://irp.cdn-website.com:443 "GET /3de07f8a/files/uploaded/gesekokanax.pdf HTTP/1.1" 200 None
+2025-04-27 14:04:08,218 - ERROR - Error previewing PDF: No module named 'pdf2image'

