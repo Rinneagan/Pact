@@ -1,4 +1,4 @@
-# PDF Downloader
+# PDFetch
 
 A Python application for searching and downloading PDF files with a modern GUI interface.
 
