@@ -3,4 +3,5 @@ PyPDF2>=3.0.0
 python-dotenv>=1.0.0
 Pillow>=10.0.0
 pdf2image>=1.16.3
-serpapi>=0.1.0 
+serpapi>=0.1.0
+ttkbootstrap>=1.10.0

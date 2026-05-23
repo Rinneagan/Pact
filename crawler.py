@@ -3,6 +3,8 @@ import os
 import re
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
+import ttkbootstrap as ttkb
+from ttkbootstrap.constants import *
 
 import logging
 import PyPDF2
@@ -129,7 +131,7 @@ class PDFDownloaderApp:
     def __init__(self, root):
         self.root = root
         self.root.title("PDF Downloader")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x700")
 
         # Initialize theme state (dark by default)
         self.is_dark_theme = True
@@ -140,95 +142,92 @@ class PDFDownloaderApp:
 
         # Folder selection
         self.selected_directory = DEFAULT_DOWNLOAD_DIR
-
-        # Create main frame
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Search term input field
-        self.search_term_label = ttk.Label(self.main_frame, text="Enter the name of the PDF:")
-        self.search_term_label.pack(pady=5)
-        self.search_term_entry = ttk.Entry(self.main_frame, width=50, font=("Helvetica", 12))
-        self.search_term_entry.pack(pady=5)
-
-        # Search Button
-        self.search_button = ttk.Button(self.main_frame, text="Search PDFs", command=self.search_pdfs)
-        self.search_button.pack(pady=10)
-
-        # Clear Search Button
-        self.clear_search_button = ttk.Button(self.main_frame, text="Clear Search", command=self.clear_search)
-        self.clear_search_button.pack(pady=5)
-
-        # Listbox for PDF results
-        self.results_label = ttk.Label(self.main_frame, text="Found PDFs:")
-        self.results_label.pack(pady=5)
-        self.results_listbox = tk.Listbox(self.main_frame, width=80, height=10, font=("Helvetica", 10))
-        self.results_listbox.pack(pady=5)
-
-        # Preview PDF Button
-        self.preview_button = ttk.Button(self.main_frame, text="Preview PDF", command=self.preview_selected_pdf)
-        self.preview_button.pack(pady=5)
-
-        # Download Button
-        self.download_button = ttk.Button(self.main_frame, text="Download PDF", command=self.download_pdf)
-        self.download_button.pack(pady=10)
-
-        # Cancel Download Button
-        self.cancel_button = ttk.Button(self.main_frame, text="Cancel Download", command=self.cancel_download, state=tk.DISABLED)
-        self.cancel_button.pack(pady=5)
-
-        # Progress bar for downloading
-        self.progress = ttk.Progressbar(self.main_frame, length=200, mode='determinate')
-        self.progress.pack(pady=10)
-
-        # Status bar
-        self.status_var = tk.StringVar()
-        self.status_var.set("Ready")
-        self.status_bar = ttk.Label(self.main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-
-        # Folder selection button
-        self.select_folder_button = ttk.Button(self.main_frame, text="Select Folder", command=self.select_directory)
-        self.select_folder_button.pack(pady=10)
-
-        # Search history label
-        self.search_history_label = ttk.Label(self.main_frame, text="Search History:")
-        self.search_history_label.pack(pady=5)
-
-        # History combobox (dropdown) for previous search terms
-        self.search_history_combobox = ttk.Combobox(self.main_frame, width=50, values=[], state="readonly", font=("Helvetica", 10))
-        self.search_history_combobox.pack(pady=5)
-
         self.pdf_links = []
 
-        # Download history listbox
-        self.download_history_label = ttk.Label(self.main_frame, text="Download History:")
-        self.download_history_label.pack(pady=5)
+        # --- Sidebar Frame ---
+        self.sidebar_frame = ttkb.Frame(root, padding=20, bootstyle="secondary")
+        self.sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        self.download_history_listbox = tk.Listbox(self.main_frame, width=80, height=5, font=("Helvetica", 10))
-        self.download_history_listbox.pack(pady=5)
+        # Sidebar: Folder selection button
+        self.select_folder_button = ttkb.Button(self.sidebar_frame, text="Select Folder", command=self.select_directory, bootstyle="primary-outline")
+        self.select_folder_button.pack(fill=tk.X, pady=(0, 20))
 
-        # Theme Switch Button
-        self.theme_switch_button = ttk.Button(self.main_frame, text="Switch Theme", command=self.switch_theme)
-        self.theme_switch_button.pack(pady=15)
+        # Sidebar: Search history
+        self.search_history_label = ttkb.Label(self.sidebar_frame, text="Search History:", font=("Helvetica", 12, "bold"))
+        self.search_history_label.pack(anchor=tk.W, pady=(0, 5))
+
+        self.search_history_combobox = ttkb.Combobox(self.sidebar_frame, width=25, values=[], state="readonly", font=("Helvetica", 10))
+        self.search_history_combobox.pack(fill=tk.X, pady=(0, 20))
+
+        # Sidebar: Download history
+        self.download_history_label = ttkb.Label(self.sidebar_frame, text="Download History:", font=("Helvetica", 12, "bold"))
+        self.download_history_label.pack(anchor=tk.W, pady=(0, 5))
+
+        self.download_history_listbox = tk.Listbox(self.sidebar_frame, height=10, font=("Helvetica", 10))
+        self.download_history_listbox.pack(fill=tk.X, pady=(0, 20))
+
+        # Spacer
+        ttkb.Frame(self.sidebar_frame).pack(expand=True, fill=tk.BOTH)
+
+        # Sidebar: Theme Switch Button
+        self.theme_switch_button = ttkb.Button(self.sidebar_frame, text="Switch Theme", command=self.switch_theme, bootstyle="info")
+        self.theme_switch_button.pack(fill=tk.X, pady=10)
+
+        # --- Main Area Frame ---
+        self.main_area_frame = ttkb.Frame(root, padding=20)
+        self.main_area_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Main: Search term input field
+        self.search_term_label = ttkb.Label(self.main_area_frame, text="Enter the name of the PDF:", font=("Helvetica", 14, "bold"))
+        self.search_term_label.pack(anchor=tk.W, pady=(0, 10))
+
+        search_frame = ttkb.Frame(self.main_area_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 20))
+
+        self.search_term_entry = ttkb.Entry(search_frame, font=("Helvetica", 12))
+        self.search_term_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        self.search_button = ttkb.Button(search_frame, text="Search PDFs", command=self.search_pdfs, bootstyle="success")
+        self.search_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.clear_search_button = ttkb.Button(search_frame, text="Clear", command=self.clear_search, bootstyle="secondary-outline")
+        self.clear_search_button.pack(side=tk.LEFT)
+
+        # Main: Listbox for PDF results
+        self.results_label = ttkb.Label(self.main_area_frame, text="Found PDFs:", font=("Helvetica", 12, "bold"))
+        self.results_label.pack(anchor=tk.W, pady=(0, 5))
+
+        self.results_listbox = tk.Listbox(self.main_area_frame, height=15, font=("Helvetica", 10))
+        self.results_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+
+        # Main: Action buttons frame
+        action_frame = ttkb.Frame(self.main_area_frame)
+        action_frame.pack(fill=tk.X, pady=(0, 20))
+
+        self.preview_button = ttkb.Button(action_frame, text="Preview PDF", command=self.preview_selected_pdf, bootstyle="info")
+        self.preview_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.download_button = ttkb.Button(action_frame, text="Download PDF", command=self.download_pdf, bootstyle="success")
+        self.download_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.cancel_button = ttkb.Button(action_frame, text="Cancel Download", command=self.cancel_download, state=tk.DISABLED, bootstyle="danger")
+        self.cancel_button.pack(side=tk.LEFT)
+
+        # Main: Progress bar for downloading
+        self.progress = ttkb.Progressbar(self.main_area_frame, mode='determinate', bootstyle="success-striped")
+        self.progress.pack(fill=tk.X, pady=(0, 10))
+
+        # Main: Status bar
+        self.status_var = tk.StringVar()
+        self.status_var.set("Ready")
+        self.status_bar = ttkb.Label(self.main_area_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W, font=("Helvetica", 10))
+        self.status_bar.pack(fill=tk.X)
 
     def apply_theme(self):
         """Apply the appropriate theme based on the state"""
-        if self.is_dark_theme:
-            self.style = ttk.Style()
-            self.style.theme_use("clam")
-            self.style.configure("TButton", background="#3e8e41", foreground="white", font=("Helvetica", 12))
-            self.style.configure("TLabel", font=("Helvetica", 12), background="#2b2b2b", foreground="white")
-            self.style.configure("TProgressbar", thickness=30, background="green")
-        else:
-            self.style = ttk.Style()
-            self.style.theme_use("clam")
-            self.style.configure("TButton", background="#f0f0f0", foreground="black", font=("Helvetica", 12))
-            self.style.configure("TLabel", font=("Helvetica", 12), background="#ffffff", foreground="black")
-            self.style.configure("TProgressbar", thickness=30, background="lightblue")
-
-        # Reconfigure the widgets after applying the theme
-        self.root.configure(bg="#2b2b2b" if self.is_dark_theme else "#ffffff")
+        theme_name = "darkly" if self.is_dark_theme else "litera"
+        if hasattr(self.root, 'style'):
+            self.root.style.theme_use(theme_name)
 
     def switch_theme(self):
         """Switch between dark and light themes"""
@@ -349,6 +348,6 @@ class PDFDownloaderApp:
 
 # Create the main window and run the app
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ttkb.Window(themename="darkly")
     app = PDFDownloaderApp(root)
     root.mainloop()
