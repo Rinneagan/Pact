@@ -13,11 +13,20 @@ A modern, secure Python desktop application for searching, previewing, and downl
 - **PDF Preview**: Preview the first page of PDFs before downloading
 - **Download Management**: Download PDFs with real-time progress tracking
 - **Cancelable Downloads**: Stop downloads at any time with a single click
+- **Integrated PDF Reader**: Read PDFs directly within the application with zoom controls and page navigation
+- **Library View**: Organize downloaded PDFs in a grid with thumbnails and tags
+- **Drag-and-Drop Import**: Import PDFs by dragging them into the application window
+- **Reading Progress**: Track reading progress and resume where you left off
+- **Related Documents**: Discover related PDFs based on filename similarity
+- **Reading Statistics**: View reading activity with a 7-day sparkline
 
 ### User Interface
 - **Dark/Light Themes**: Switch between dark and light visual themes
-- **Search History**: Maintain search history between sessions
-- **Download History**: Track all downloaded files
+- **Search History**: Maintain search history between sessions with quick-access chips
+- **Download History**: Track all downloaded files in the sidebar
+- **Continue Reading**: Quick access to recently read documents
+- **Document Tagging**: Manually tag documents for organization
+- **Resizable Panels**: Draggable, resizable sidebar and preview panes
 - **Status Bar**: Real-time operation feedback and status updates
 - **Progress Tracking**: Visual progress bar for download operations
 
@@ -31,7 +40,7 @@ A modern, secure Python desktop application for searching, previewing, and downl
 ## Installation
 
 ### Prerequisites
-- Python 3.7 or higher
+- Python 3.8 or higher
 - pip (Python package manager)
 - Internet connection
 - SerpApi API key ([Get one here](https://serpapi.com/))
@@ -83,26 +92,30 @@ A modern, secure Python desktop application for searching, previewing, and downl
 ### Running the Application
 
 ```bash
-python crawler.py
+python app.py
 ```
 
 ### Basic Workflow
 
-1. **Launch the application** - The GUI will open with the dark theme by default
+1. **Launch the application** - The GUI will open with the light theme by default
 2. **Enter search term** - Type your PDF search query in the search box
-3. **Search** - Click "Search PDFs" to find matching PDFs
-4. **Preview** - Select a PDF from results and click "Preview PDF" to view the first page
-5. **Download** - Click "Download PDF" to save the selected PDF
-6. **Choose location** - Use "Select Folder" to change download directory (default: Downloads)
-7. **Cancel** - Click "Cancel Download" to stop an active download
-8. **Switch theme** - Use "Switch Theme" to toggle between dark and light modes
+3. **Search** - Click "Search" or press Enter to find matching PDFs
+4. **Preview** - Select a PDF from results to see the preview in the right panel
+5. **Download** - Click the download button to save the selected PDF
+6. **Read** - Click "📖 Read" on downloaded files to open the integrated reader
+7. **Library** - Click "📚 Library" to view all downloaded PDFs in a grid
+8. **Drag and Drop** - Drag PDF files into the window to import them
+9. **Switch theme** - Use the theme switch to toggle between dark and light modes
 
 ### Advanced Features
 
-- **Search History**: Access previous searches via the dropdown
-- **Download History**: View all downloaded files in the history list
-- **Progress Tracking**: Monitor download progress in real-time
-- **Error Handling**: Automatic validation and error reporting
+- **Search History**: Quick-access chips for recent searches
+- **Continue Reading**: Resume reading from where you left off
+- **Document Tagging**: Add tags to organize your library
+- **Related Documents**: Discover similar PDFs based on filename
+- **Reading Statistics**: View your reading activity with a sparkline
+- **Zoom Controls**: Adjust zoom level in the integrated reader
+- **Page Navigation**: Jump to specific pages using the outline/TOC
 
 ## Configuration
 
@@ -168,11 +181,28 @@ PDFfetch/
 ├── .env                 # API key configuration (not in git)
 ├── .gitignore          # Git ignore rules
 ├── config.py           # Application configuration
-├── crawler.py          # Main application and GUI
+├── crawler.py          # Backend: PDF search, preview, validation
+├── app.py              # Main application and GUI coordinator
 ├── requirements.txt    # Python dependencies
 ├── README.md          # This file
 ├── app.log            # Application logs
-└── *.pdf              # Downloaded PDF files
+├── persistence/        # Persistence layer
+│   ├── __init__.py
+│   └── stores.py       # ReadingProgressStore, RecentSearchesStore, TagStore, ThumbnailCache, ReadingStatsStore
+├── utils/              # Utility modules
+│   ├── __init__.py
+│   ├── typography.py   # PremiumTypography class
+│   └── related_docs.py # find_related_documents and tokenization
+├── reader/             # PDF reader module
+│   ├── __init__.py
+│   └── reader_view.py  # PactReaderView (embedded PDF reader)
+└── ui/                 # UI components
+    ├── __init__.py
+    ├── search.py       # SearchManager (search UI and results)
+    ├── downloads.py    # DownloadManager (download queue and progress)
+    ├── library.py      # LibraryManager (library grid view)
+    ├── drag_drop.py    # DragDropManager (PDF import via drag-and-drop)
+    └── reading_stats.py # ReadingStatsManager (reading statistics display)
 ```
 
 ## Dependencies
@@ -183,6 +213,9 @@ PDFfetch/
 - `Pillow>=10.0.0` - Image processing
 - `pdf2image>=1.16.3` - PDF to image conversion
 - `serpapi>=0.1.0` - Google Search API client
+- `customtkinter>=5.0.0` - Modern UI framework
+- `pymupdf>=1.23.0` - PDF rendering for integrated reader
+- `tkinterdnd2>=0.3.0` - Drag-and-drop support
 
 ## Development
 
@@ -223,7 +256,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run the application
-python crawler.py
+python app.py
 ```
 
 ## License
@@ -246,7 +279,19 @@ For issues, questions, or contributions:
 
 ## Changelog
 
-### Version 1.0.0 (Current)
+### Version 2.0.0 (Current)
+- Major refactoring to modular architecture
+- Separated concerns into persistence, utils, reader, and UI packages
+- Added integrated PDF reader with zoom controls and page navigation
+- Added library view with thumbnails and document tagging
+- Added drag-and-drop import functionality
+- Added reading progress tracking and "Continue Reading" shelf
+- Added related documents discovery based on filename similarity
+- Added reading statistics with 7-day sparkline
+- Improved UI with resizable panels and better theme support
+- Updated dependencies to include pymupdf and tkinterdnd2
+
+### Version 1.0.0
 - Initial release
 - PDF search and download functionality
 - GUI with dark/light themes
