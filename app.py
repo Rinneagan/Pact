@@ -551,6 +551,12 @@ def main() -> None:
                 fh.write("# Pact API Configuration\n# Enter your SerpApi key below to enable PDF search:\nSERPAPI_KEY=\n")
         except Exception:
             pass
+
+    # Ensure local downloads folder exists
+    try:
+        os.makedirs(api.get_downloads_dir(), exist_ok=True)
+    except Exception:
+        pass
             
     # Locate absolute path to web/ directory
     web_dir = get_resource_path("web")

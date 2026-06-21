@@ -26,7 +26,7 @@ load_dotenv()
 SERPAPI_KEY = os.getenv('SERPAPI_KEY', '')
 
 # Application Settings
-DEFAULT_DOWNLOAD_DIR = os.path.join(os.path.expanduser('~'), 'Documents')
+DEFAULT_DOWNLOAD_DIR = os.path.join(os.path.expanduser('~'), 'Documents', 'Pact Downloads')
 MAX_RETRIES = 3
 TIMEOUT = 30  # seconds
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB

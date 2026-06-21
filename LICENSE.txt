@@ -1,0 +1,20 @@
+Pact End-User License Agreement (EULA)
+
+Please read the following license agreement carefully before installing Pact.
+
+1. LICENSE GRANT
+Ebenezer Essel grants you a non-exclusive, non-transferable license to install and use Pact for personal, academic, or professional document reading and search purposes.
+
+2. RESTRICTIONS
+You may not:
+- Modify, decompile, disassemble, or reverse engineer Pact.
+- Distribute, lease, sell, or rent Pact without express written consent.
+- Use Pact for any unlawful or unauthorized activity.
+
+3. DISCLAIMER OF WARRANTY
+PACT IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+4. LIMITATION OF LIABILITY
+IN NO EVENT SHALL THE PUBLISHER (EBENEZER ESSEL) BE LIABLE FOR ANY DAMAGES ARISING OUT OF THE USE OF OR INABILITY TO USE THE APPLICATION.
+
+Copyright (c) 2026 Ebenezer Essel. All rights reserved.
