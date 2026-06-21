@@ -284,6 +284,32 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Zen Soundscapes Panel (Visible in Focus Mode) -->
+                <div id="zen-audio-panel" class="zen-panel hidden">
+                    <button class="zen-play-btn" onclick="toggleZenAudio()" title="Play/Pause Ambient Sound">
+                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="4" width="4" height="16"/>
+                            <rect x="14" y="4" width="4" height="16"/>
+                        </svg>
+                    </button>
+                    <select id="zen-sound-select" onchange="changeZenSound(this.value)" class="zen-select">
+                        <option value="https://www.soundjay.com/nature/sounds/rain-07.mp3">🌧️ Rain</option>
+                        <option value="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3">🎵 Lofi Beats</option>
+                        <option value="https://www.soundjay.com/nature/sounds/forest-birds-01.mp3">🌳 Forest Birds</option>
+                    </select>
+                    <div class="zen-volume-container">
+                        <svg class="volume-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                        </svg>
+                        <input type="range" id="zen-volume-slider" min="0" max="1" step="0.05" value="0.5" oninput="changeZenVolume(this.value)" class="zen-slider">
+                    </div>
+                    <audio id="zen-audio-element" loop></audio>
+                </div>
             </div>
         </main>
 

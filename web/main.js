@@ -692,6 +692,20 @@ function closeReader() {
             btn.style.color = '';
         }
     }
+    
+    // Auto-fade-out and stop ambient audio if playing when reader is closed
+    const audio = document.getElementById('zen-audio-element');
+    if (audio && !audio.paused) {
+        fadeAudio(audio, 0, 800, () => {
+            audio.pause();
+            zenAudioState.isPlaying = false;
+            const playBtn = document.querySelector('.zen-play-btn .play-icon');
+            const pauseBtn = document.querySelector('.zen-play-btn .pause-icon');
+            if (playBtn) playBtn.classList.remove('hidden');
+            if (pauseBtn) pauseBtn.classList.add('hidden');
+        });
+    }
+    
     clearKeywordSearch();
 
     pywebview.api.close_document();
@@ -960,10 +974,27 @@ function toggleFocusMode() {
         btn.classList.add('active');
         btn.style.color = 'var(--accent-primary)';
         showToast('Entering Deep Focus Mode. Hover near top to show toolbar. Press Esc to exit.');
+        
+        // Auto-show zen audio panel in Focus Mode
+        const zenPanel = document.getElementById('zen-audio-panel');
+        if (zenPanel) zenPanel.classList.remove('hidden');
     } else {
         btn.classList.remove('active');
         btn.style.color = '';
         showToast('Exited Focus Mode');
+        
+        // Auto-fade-out and stop ambient audio if playing
+        const audio = document.getElementById('zen-audio-element');
+        if (audio && !audio.paused) {
+            fadeAudio(audio, 0, 800, () => {
+                audio.pause();
+                zenAudioState.isPlaying = false;
+                const playBtn = document.querySelector('.zen-play-btn .play-icon');
+                const pauseBtn = document.querySelector('.zen-play-btn .pause-icon');
+                if (playBtn) playBtn.classList.remove('hidden');
+                if (pauseBtn) pauseBtn.classList.add('hidden');
+            });
+        }
     }
 }
 
@@ -1096,4 +1127,91 @@ function clearKeywordSearch() {
     document.querySelectorAll('#keywords-cloud .keyword-tag').forEach(t => t.classList.remove('active'));
     const matchesContainer = document.getElementById('keyword-matches');
     if (matchesContainer) matchesContainer.classList.add('hidden');
+}
+
+/* ZEN AUDIO EXPERIENCES SETUP */
+
+let zenAudioState = {
+    isPlaying: false,
+    volume: 0.5,
+    fadeInterval: null
+};
+
+function toggleZenAudio() {
+    const audio = document.getElementById('zen-audio-element');
+    const playBtn = document.querySelector('.zen-play-btn .play-icon');
+    const pauseBtn = document.querySelector('.zen-play-btn .pause-icon');
+    if (!audio) return;
+    
+    if (audio.paused) {
+        if (!audio.src) {
+            const select = document.getElementById('zen-sound-select');
+            audio.src = select.value;
+        }
+        audio.volume = 0; // fade in from silent
+        audio.play().then(() => {
+            zenAudioState.isPlaying = true;
+            if (playBtn) playBtn.classList.add('hidden');
+            if (pauseBtn) pauseBtn.classList.remove('hidden');
+            fadeAudio(audio, zenAudioState.volume, 1000); // fade to preset volume over 1s
+        }).catch(err => {
+            showToast('Unable to play ambient sound: Network error', true);
+        });
+    } else {
+        fadeAudio(audio, 0, 800, () => {
+            audio.pause();
+            zenAudioState.isPlaying = false;
+            if (playBtn) playBtn.classList.remove('hidden');
+            if (pauseBtn) pauseBtn.classList.add('hidden');
+        });
+    }
+}
+
+function changeZenSound(url) {
+    const audio = document.getElementById('zen-audio-element');
+    if (!audio) return;
+    
+    const wasPlaying = !audio.paused;
+    if (zenAudioState.fadeInterval) {
+        clearInterval(zenAudioState.fadeInterval);
+        zenAudioState.fadeInterval = null;
+    }
+    
+    audio.src = url;
+    if (wasPlaying) {
+        audio.volume = zenAudioState.volume;
+        audio.play().catch(() => {});
+    }
+}
+
+function changeZenVolume(volume) {
+    zenAudioState.volume = parseFloat(volume);
+    const audio = document.getElementById('zen-audio-element');
+    if (audio && !audio.paused && !zenAudioState.fadeInterval) {
+        audio.volume = zenAudioState.volume;
+    }
+}
+
+function fadeAudio(audio, targetVolume, duration, callback) {
+    if (zenAudioState.fadeInterval) {
+        clearInterval(zenAudioState.fadeInterval);
+    }
+    
+    const steps = 20;
+    const intervalTime = duration / steps;
+    const initialVolume = audio.volume;
+    const volumeDelta = (targetVolume - initialVolume) / steps;
+    let step = 0;
+    
+    zenAudioState.fadeInterval = setInterval(() => {
+        audio.volume = Math.max(0, Math.min(1, initialVolume + volumeDelta * step));
+        step++;
+        
+        if (step > steps) {
+            clearInterval(zenAudioState.fadeInterval);
+            zenAudioState.fadeInterval = null;
+            audio.volume = targetVolume;
+            if (callback) callback();
+        }
+    }, intervalTime);
 }
