@@ -192,15 +192,23 @@ class PactAPI:
             "progress": 0.0,
             "active": True,
             "complete": False,
+            "failed": False,
+            "error_msg": "",
             "save_path": save_path,
         }
 
         try:
-            response = requests.get(url, stream=True, timeout=30)
+            # Edge User-Agent header to prevent 403 Forbidden blocks
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+            }
+            response = requests.get(url, stream=True, headers=headers, timeout=30)
             response.raise_for_status()
             total_size = int(response.headers.get("Content-Length", 0))
 
             if total_size > MAX_FILE_SIZE:
+                self.active_downloads[download_id]["failed"] = True
+                self.active_downloads[download_id]["error_msg"] = f"File size exceeds limit ({MAX_FILE_SIZE // 1024 // 1024}MB)"
                 self.active_downloads[download_id]["active"] = False
                 return
 
