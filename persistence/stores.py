@@ -36,6 +36,7 @@ RECENT_SEARCHES_FILE = os.path.join(PACT_DIR, "recent_searches.json")
 TAGS_FILE = os.path.join(PACT_DIR, "tags.json")
 THUMBNAIL_DIR = os.path.join(PACT_DIR, "thumbnails")
 STATS_FILE = os.path.join(PACT_DIR, "reading_stats.json")
+BOOKMARKS_FILE = os.path.join(PACT_DIR, "bookmarks.json")
 
 
 # ---------------------------------------------------------------------------
@@ -315,3 +316,65 @@ class ReadingStatsStore:
             day = (today - datetime.timedelta(days=i)).isoformat()
             out.append(daily.get(day, 0))
         return out
+
+
+# ---------------------------------------------------------------------------
+# Bookmark Store
+# ---------------------------------------------------------------------------
+
+class BookmarkStore:
+    """Removes/adds page-level bookmarks and personal annotations (notes) for PDFs."""
+
+    def __init__(self) -> None:
+        os.makedirs(PACT_DIR, exist_ok=True)
+        self._data: dict[str, list[dict[str, Any]]] = self._load()
+
+    def _load(self) -> dict[str, list[dict[str, Any]]]:
+        try:
+            with open(BOOKMARKS_FILE, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+                return data if isinstance(data, dict) else {}
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            return {}
+
+    def _save(self) -> None:
+        try:
+            with open(BOOKMARKS_FILE, "w", encoding="utf-8") as fh:
+                json.dump(self._data, fh, indent=2)
+        except OSError:
+            pass
+
+    def add(self, filepath: str, page: int, note: str = "") -> None:
+        key = os.path.abspath(filepath)
+        bookmarks = self._data.setdefault(key, [])
+        # Check if already exists for this page
+        existing = None
+        for b in bookmarks:
+            if b.get("page") == page:
+                existing = b
+                break
+        if existing is not None:
+            existing["note"] = note
+            existing["timestamp"] = time.time()
+        else:
+            bookmarks.append({
+                "page": page,
+                "note": note,
+                "timestamp": time.time()
+            })
+        # Sort bookmarks by page number
+        bookmarks.sort(key=lambda x: x.get("page", 0))
+        self._save()
+
+    def get(self, filepath: str) -> list[dict[str, Any]]:
+        key = os.path.abspath(filepath)
+        # Return a copy to prevent in-place modification bypasses
+        return list(self._data.get(key, []))
+
+    def remove(self, filepath: str, page: int) -> None:
+        key = os.path.abspath(filepath)
+        if key in self._data:
+            self._data[key] = [b for b in self._data[key] if b.get("page") != page]
+            if not self._data[key]:
+                del self._data[key]
+            self._save()

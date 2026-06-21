@@ -6,6 +6,7 @@ from .stores import (
     TagStore,
     ThumbnailCache,
     ReadingStatsStore,
+    BookmarkStore,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "TagStore",
     "ThumbnailCache",
     "ReadingStatsStore",
+    "BookmarkStore",
 ]
