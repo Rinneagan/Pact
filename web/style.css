@@ -1933,3 +1933,217 @@ body.has-wallpaper .chart-wrapper {
     transform: scale(1.2);
     background: var(--accent-secondary);
 }
+
+/* Adjust stats card container layout for 3 columns on larger screens */
+@media (min-width: 1024px) {
+    .stats-cards-container {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+/* Pomodoro Study Timer Panel */
+.pomodoro-panel {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    background-color: rgba(20, 26, 41, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 150;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+#reader-view:not(.focus-mode) .pomodoro-panel {
+    transform: translateY(100px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+#reader-view.focus-mode .pomodoro-panel {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pomo-timer-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pomo-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: rotate(-90deg); /* Start progress circle from top */
+}
+
+.pomo-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 4;
+}
+
+.pomo-ring-fill {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 213.6; /* 2 * PI * r = 2 * 3.14159 * 34 = 213.6 */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.3s linear, stroke var(--transition-normal);
+}
+
+.pomo-time {
+    font-family: var(--font-monospace);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    z-index: 2;
+}
+
+.pomo-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pomo-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.pomo-btn:hover {
+    transform: scale(1.15);
+    color: var(--accent-primary);
+}
+
+.pomo-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+#pomo-play-btn {
+    color: var(--accent-primary);
+}
+
+#pomo-play-btn:hover {
+    color: var(--accent-secondary);
+}
+
+.pomo-select {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 20px 4px 6px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+}
+
+.pomo-select:hover {
+    border-color: var(--accent-primary);
+}
+
+.pomo-select option {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+/* Daily Reading Goal Card */
+.goal-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.goal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+#goal-progress-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.goal-progress-container {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.goal-setup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+#goal-input-value {
+    width: 60px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    padding: 4px 6px;
+    font-family: var(--font-primary);
+    font-size: 12px;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+#goal-input-value:focus {
+    border-color: var(--accent-primary);
+}
+

@@ -48,6 +48,7 @@ function initApp() {
     refreshContinueReading();
     refreshSearchHistory();
     refreshStats();
+    initDailyGoal();
     
     // 3. Start active downloads polling loop
     startDownloadsPolling();
@@ -653,6 +654,7 @@ function refreshStats() {
     pywebview.api.get_heatmap_data().then(data => {
         renderHeatmap(data);
     });
+    updateDailyGoalUI();
 }
 
 /* PDF READER VIEW */
@@ -705,6 +707,10 @@ function closeReader() {
             if (pauseBtn) pauseBtn.classList.add('hidden');
         });
     }
+
+    const pomoPanel = document.getElementById('pomodoro-panel');
+    if (pomoPanel) pomoPanel.classList.add('hidden');
+    pausePomodoro();
     
     clearKeywordSearch();
 
@@ -771,6 +777,7 @@ function refreshReaderPage() {
     // Update toolbar controls status
     updateReaderNavControls();
     updateBookmarkButtonUI();
+    updateDailyGoalUI();
 }
 
 function updateReaderNavControls() {
@@ -978,6 +985,9 @@ function toggleFocusMode() {
         // Auto-show zen audio panel in Focus Mode
         const zenPanel = document.getElementById('zen-audio-panel');
         if (zenPanel) zenPanel.classList.remove('hidden');
+        const pomoPanel = document.getElementById('pomodoro-panel');
+        if (pomoPanel) pomoPanel.classList.remove('hidden');
+        updatePomodoroUI();
     } else {
         btn.classList.remove('active');
         btn.style.color = '';
@@ -995,6 +1005,10 @@ function toggleFocusMode() {
                 if (pauseBtn) pauseBtn.classList.add('hidden');
             });
         }
+
+        const pomoPanel = document.getElementById('pomodoro-panel');
+        if (pomoPanel) pomoPanel.classList.add('hidden');
+        pausePomodoro();
     }
 }
 
@@ -1215,3 +1229,319 @@ function fadeAudio(audio, targetVolume, duration, callback) {
         }
     }, intervalTime);
 }
+
+/* POMODORO TIMER STATE LOGIC */
+
+let pomoState = {
+    timerId: null,
+    duration: 25 * 60,
+    timeRemaining: 25 * 60,
+    isRunning: false,
+    mode: 'focus' // 'focus', 'short', 'long'
+};
+
+function togglePomodoro() {
+    if (pomoState.isRunning) {
+        pausePomodoro();
+    } else {
+        startPomodoro();
+    }
+}
+
+function startPomodoro() {
+    const playIcon = document.querySelector('.pomo-play-icon');
+    const pauseIcon = document.querySelector('.pomo-pause-icon');
+    if (playIcon) playIcon.classList.add('hidden');
+    if (pauseIcon) pauseIcon.classList.remove('hidden');
+    
+    pomoState.isRunning = true;
+    
+    if (!pomoState.timerId) {
+        pomoState.timerId = setInterval(() => {
+            pomoState.timeRemaining--;
+            updatePomodoroUI();
+            
+            if (pomoState.timeRemaining <= 0) {
+                handlePomodoroCompletion();
+            }
+        }, 1000);
+    }
+}
+
+function pausePomodoro() {
+    const playIcon = document.querySelector('.pomo-play-icon');
+    const pauseIcon = document.querySelector('.pomo-pause-icon');
+    if (playIcon) playIcon.classList.remove('hidden');
+    if (pauseIcon) pauseIcon.classList.add('hidden');
+    
+    pomoState.isRunning = false;
+    if (pomoState.timerId) {
+        clearInterval(pomoState.timerId);
+        pomoState.timerId = null;
+    }
+}
+
+function resetPomodoro() {
+    pausePomodoro();
+    pomoState.timeRemaining = pomoState.duration;
+    updatePomodoroUI();
+}
+
+function changePomodoroMode(mode) {
+    pomoState.mode = mode;
+    let minutes = 25;
+    if (mode === 'short') minutes = 5;
+    else if (mode === 'long') minutes = 15;
+    
+    pomoState.duration = minutes * 60;
+    pomoState.timeRemaining = pomoState.duration;
+    
+    pausePomodoro();
+    updatePomodoroUI();
+}
+
+function updatePomodoroUI() {
+    const minutes = Math.floor(pomoState.timeRemaining / 60);
+    const seconds = pomoState.timeRemaining % 60;
+    const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    const display = document.getElementById('pomo-time-display');
+    if (display) display.textContent = timeStr;
+    
+    const ringProgress = document.getElementById('pomo-ring-progress');
+    if (ringProgress) {
+        const totalDash = 213.6;
+        const pct = pomoState.timeRemaining / pomoState.duration;
+        const offset = totalDash * (1 - pct);
+        ringProgress.style.strokeDashoffset = offset;
+    }
+}
+
+function handlePomodoroCompletion() {
+    pausePomodoro();
+    playPomoChime();
+    
+    if (pomoState.mode === 'focus') {
+        showToast("🎯 Pomodoro Focus Session Complete! Time for a break.");
+        
+        // Auto-pause Zen audio if playing
+        const audio = document.getElementById('zen-audio-element');
+        if (audio && !audio.paused) {
+            fadeAudio(audio, 0, 800, () => {
+                audio.pause();
+                zenAudioState.isPlaying = false;
+                const playBtn = document.querySelector('.zen-play-btn .play-icon');
+                const pauseBtn = document.querySelector('.zen-play-btn .pause-icon');
+                if (playBtn) playBtn.classList.remove('hidden');
+                if (pauseBtn) pauseBtn.classList.add('hidden');
+            });
+        }
+        
+        const modeSelect = document.getElementById('pomo-mode-select');
+        if (modeSelect) modeSelect.value = 'short';
+        changePomodoroMode('short');
+    } else {
+        showToast("💪 Break is over! Let's get back to reading.");
+        
+        const modeSelect = document.getElementById('pomo-mode-select');
+        if (modeSelect) modeSelect.value = 'focus';
+        changePomodoroMode('focus');
+    }
+}
+
+/* CHIME SOUND GENERATION */
+
+function playPomoChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playTone = (freq, startTime, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+            
+            gainNode.gain.setValueAtTime(0.15, startTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        };
+        
+        const now = audioCtx.currentTime;
+        playTone(523.25, now, 0.6); // C5
+        playTone(659.25, now + 0.15, 0.6); // E5
+        playTone(783.99, now + 0.3, 0.8); // G5
+        playTone(1046.50, now + 0.45, 1.0); // C6
+    } catch (e) {
+        console.error("Audio synthesis failed", e);
+    }
+}
+
+/* DAILY GOAL STATE LOGIC */
+
+let dailyGoalState = {
+    goalPages: 10,
+    pagesReadToday: 0,
+    goalReachedTriggered: false
+};
+
+function initDailyGoal() {
+    const savedGoal = localStorage.getItem('pact_daily_goal');
+    if (savedGoal) {
+        dailyGoalState.goalPages = parseInt(savedGoal);
+        const goalInput = document.getElementById('goal-input-value');
+        if (goalInput) goalInput.value = dailyGoalState.goalPages;
+        const goalDisplay = document.getElementById('stats-goal-pages');
+        if (goalDisplay) goalDisplay.textContent = dailyGoalState.goalPages;
+    } else {
+        dailyGoalState.goalPages = 10;
+    }
+    updateDailyGoalUI();
+}
+
+function saveDailyGoal() {
+    const input = document.getElementById('goal-input-value');
+    if (!input) return;
+    
+    const val = parseInt(input.value);
+    if (isNaN(val) || val < 1) {
+        showToast("Please enter a valid page count (1 or more)", true);
+        return;
+    }
+    
+    dailyGoalState.goalPages = val;
+    localStorage.setItem('pact_daily_goal', val);
+    
+    const goalDisplay = document.getElementById('stats-goal-pages');
+    if (goalDisplay) goalDisplay.textContent = val;
+    
+    dailyGoalState.goalReachedTriggered = false;
+    updateDailyGoalUI();
+    showToast(`Daily reading goal set to ${val} pages!`);
+}
+
+function updateDailyGoalUI() {
+    if (typeof pywebview === 'undefined' || !pywebview.api) {
+        return;
+    }
+    
+    pywebview.api.get_today_pages_read().then(pages => {
+        dailyGoalState.pagesReadToday = pages;
+        
+        const progressText = document.getElementById('goal-progress-text');
+        if (progressText) {
+            progressText.textContent = `${pages} / ${dailyGoalState.goalPages} page${dailyGoalState.goalPages === 1 ? '' : 's'} read today`;
+        }
+        
+        const bar = document.getElementById('goal-progress-bar');
+        if (bar) {
+            const pct = Math.min(100, Math.round((pages / dailyGoalState.goalPages) * 100));
+            bar.style.width = `${pct}%`;
+        }
+        
+        if (pages >= dailyGoalState.goalPages && dailyGoalState.goalPages > 0) {
+            if (!dailyGoalState.goalReachedTriggered) {
+                dailyGoalState.goalReachedTriggered = true;
+                setTimeout(() => {
+                    showToast("🎉 Congratulations! You achieved your daily reading goal!");
+                    triggerConfetti();
+                }, 500);
+            }
+        }
+    });
+}
+
+/* CONFETTI CANVAS EFFECT */
+
+let confettiParticles = [];
+let confettiAnimationId = null;
+
+function triggerConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    confettiParticles = [];
+    const colors = ['#00E5FF', '#9D00FF', '#00E676', '#FF9100', '#FF8A8A', '#FFEAA7'];
+    
+    for (let i = 0; i < 60; i++) {
+        confettiParticles.push({
+            x: 0,
+            y: canvas.height,
+            vx: 5 + Math.random() * 12,
+            vy: -18 - Math.random() * 15,
+            rotation: Math.random() * 360,
+            rotationSpeed: -10 + Math.random() * 20,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            width: 8 + Math.random() * 6,
+            height: 4 + Math.random() * 4,
+            opacity: 1
+        });
+        
+        confettiParticles.push({
+            x: canvas.width,
+            y: canvas.height,
+            vx: -5 - Math.random() * 12,
+            vy: -18 - Math.random() * 15,
+            rotation: Math.random() * 360,
+            rotationSpeed: -10 + Math.random() * 20,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            width: 8 + Math.random() * 6,
+            height: 4 + Math.random() * 4,
+            opacity: 1
+        });
+    }
+    
+    if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+    }
+    animateConfetti();
+}
+
+function animateConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
+    
+    confettiParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.3;
+        p.vx *= 0.99;
+        p.rotation += p.rotationSpeed;
+        
+        if (p.y > canvas.height * 0.7) {
+            p.opacity -= 0.02;
+        }
+        
+        if (p.opacity > 0 && p.x >= -20 && p.x <= canvas.width + 20) {
+            active = true;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.opacity;
+            ctx.fillRect(-p.width / 2, -p.height / 2, p.width, p.height);
+            ctx.restore();
+        }
+    });
+    
+    if (active) {
+        confettiAnimationId = requestAnimationFrame(animateConfetti);
+    } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiAnimationId = null;
+    }
+}
+

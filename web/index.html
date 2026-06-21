@@ -145,6 +145,23 @@
                             <span class="card-metric" id="stats-longest-read-pages">—</span>
                             <span class="card-label" id="stats-longest-read-title">Longest Read</span>
                         </div>
+                        <!-- Goal Setting Card -->
+                        <div class="stats-card goal-card">
+                            <div class="goal-header">
+                                <span class="card-label">Daily Reading Goal</span>
+                                <span class="card-metric" id="stats-goal-pages">—</span>
+                            </div>
+                            <div class="goal-body">
+                                <span id="goal-progress-text">0 / 0 pages read today</span>
+                                <div class="goal-progress-container">
+                                    <div id="goal-progress-bar" class="goal-progress-fill" style="width: 0%;"></div>
+                                </div>
+                                <div class="goal-setup">
+                                    <input type="number" id="goal-input-value" min="1" max="200" value="10" title="Set Goal Pages">
+                                    <button class="primary-btn sm" onclick="saveDailyGoal()">Set Goal</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="stats-charts-grid">
@@ -310,6 +327,33 @@
                     </div>
                     <audio id="zen-audio-element" loop></audio>
                 </div>
+
+                <!-- Pomodoro Study Timer (Visible in Focus Mode) -->
+                <div id="pomodoro-panel" class="pomodoro-panel hidden">
+                    <div class="pomo-timer-container">
+                        <svg class="pomo-ring" width="80" height="80">
+                            <circle class="pomo-ring-bg" cx="40" cy="40" r="34" />
+                            <circle id="pomo-ring-progress" class="pomo-ring-fill" cx="40" cy="40" r="34" />
+                        </svg>
+                        <span id="pomo-time-display" class="pomo-time">25:00</span>
+                    </div>
+                    <div class="pomo-controls">
+                        <button id="pomo-play-btn" class="pomo-btn" onclick="togglePomodoro()" title="Play/Pause">
+                            <svg class="pomo-play-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <svg class="pomo-pause-icon hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        </button>
+                        <button class="pomo-btn" onclick="resetPomodoro()" title="Reset">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                        </button>
+                        <select id="pomo-mode-select" onchange="changePomodoroMode(this.value)" class="pomo-select" title="Timer Mode">
+                            <option value="focus">🎯 Focus (25m)</option>
+                            <option value="short">☕ Break (5m)</option>
+                            <option value="long">🌴 Rest (15m)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -330,6 +374,7 @@
         </div>
     </div>
 
+    <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;"></canvas>
     <script src="main.js"></script>
 </body>
 </html>

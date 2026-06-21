@@ -496,6 +496,15 @@ class PactAPI:
         except Exception:
             return []
 
+    def get_today_pages_read(self) -> int:
+        """Fetch today's pages read count from the statistics store."""
+        try:
+            import datetime
+            today = datetime.date.today().isoformat()
+            return self.stats_store._data.get("daily_pages", {}).get(today, 0)
+        except Exception:
+            return 0
+
     def open_external(self, filepath: str) -> None:
         """Securely invoke system handler to view PDF."""
         try:
