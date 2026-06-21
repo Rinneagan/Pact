@@ -233,17 +233,23 @@ class PactAPI:
             if not validate_pdf_file(save_path):
                 if os.path.exists(save_path):
                     os.remove(save_path)
+                self.active_downloads[download_id]["failed"] = True
+                self.active_downloads[download_id]["error_msg"] = "Downloaded file is not a valid PDF document"
                 self.active_downloads[download_id]["active"] = False
                 return
 
             self.active_downloads[download_id]["complete"] = True
             
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.error(f"Download failed for {url}: {exc}")
             if os.path.exists(save_path):
                 try:
                     os.remove(save_path)
                 except OSError:
                     pass
+            self.active_downloads[download_id]["failed"] = True
+            self.active_downloads[download_id]["error_msg"] = str(exc)
             self.active_downloads[download_id]["active"] = False
         finally:
             if download_id in self.active_downloads:
@@ -253,12 +259,14 @@ class PactAPI:
         """Return active download progress map."""
         out = {}
         for d_id, info in list(self.active_downloads.items()):
-            # Keep completed downloads in list until fetched once
+            # Keep completed or failed downloads in list until fetched once
             out[str(d_id)] = {
                 "filename": info["filename"],
                 "progress": info["progress"],
                 "active": info["active"],
                 "complete": info["complete"],
+                "failed": info.get("failed", False),
+                "error_msg": info.get("error_msg", ""),
                 "save_path": info["save_path"],
             }
             if info["complete"] or not info["active"]:
