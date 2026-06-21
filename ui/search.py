@@ -13,6 +13,8 @@ from urllib.parse import urlparse, unquote
 import customtkinter as ctk
 
 from utils.typography import PremiumTypography
+from utils.theme import NamidaTheme
+from utils.icons import NamidaIcons
 
 
 class SearchManager:
@@ -48,8 +50,9 @@ class SearchManager:
             height=50,
             corner_radius=14,
             font=PremiumTypography.body_text(size=15),
-            fg_color=("#FFFFFF", "gray20"),
-            border_color=("#ECE9E2", "gray30"),
+            fg_color=NamidaTheme.BG_CARD,
+            border_color=NamidaTheme.BORDER,
+            text_color=NamidaTheme.TEXT_PRIMARY,
             border_width=1,
         )
         self.search_entry.grid(row=0, column=0, padx=(0, 10), pady=15, sticky="ew")
@@ -60,13 +63,16 @@ class SearchManager:
 
         self.search_button = ctk.CTkButton(
             self.search_frame,
-            text="Search",
+            text=" Search",
             font=PremiumTypography.button_text(),
-            width=140, height=50, corner_radius=14,
-            fg_color="#639922", hover_color="#4F7A1B",
+            width=100, height=50, corner_radius=14,
+            fg_color=NamidaTheme.ACCENT_PRIMARY, hover_color=NamidaTheme.ACCENT_SECONDARY,
+            text_color="#FFFFFF",
+            image=NamidaIcons.get("search", size=16, light_color="#FFFFFF", dark_color="#FFFFFF"),
             command=self.perform_search,
         )
-        self.search_button.grid(row=0, column=1, pady=15, sticky="e")
+        self.search_button.grid(row=0, column=1, padx=(0, 20), pady=15, sticky="e")
+        self.search_button.configure(cursor="hand2")
 
         self.suggestions_frame = ctk.CTkFrame(self.search_frame, fg_color="transparent")
         self.suggestions_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=2, pady=(0, 6))
@@ -74,11 +80,8 @@ class SearchManager:
 
         self.results_frame = ctk.CTkScrollableFrame(
             self.main_content_frame,
-            label_text="Search Results",
-            label_font=PremiumTypography.heading_medium(),
             corner_radius=14,
-            fg_color="transparent",
-            label_text_color=("#2C2C2A", "gray90"),
+            fg_color=NamidaTheme.BG_MAIN,
         )
         self.results_frame.grid(row=0, column=0, sticky="nsew")
 
@@ -204,16 +207,16 @@ class SearchManager:
         """Create a skeleton loading card."""
         card = ctk.CTkFrame(
             self.app.skeleton_container, corner_radius=14,
-            fg_color=("#ECE9E2", "gray25"),
+            fg_color=("#ECE9E2", "#1A1A1A"),
         )
         card.grid_columnconfigure(0, weight=1)
 
         ctk.CTkFrame(
-            card, height=20, fg_color=("#DDD9CC", "gray20"), corner_radius=4,
+            card, height=20, fg_color=("#DDD9CC", "#2A2A2A"), corner_radius=4,
         ).grid(row=0, column=0, sticky="ew", padx=15, pady=(12, 5))
 
         ctk.CTkFrame(
-            card, height=16, fg_color=("#E3DFD2", "gray22"), corner_radius=4,
+            card, height=16, fg_color=("#E3DFD2", "#333333"), corner_radius=4,
         ).grid(row=1, column=0, sticky="ew", padx=15, pady=(0, 12))
 
         return card
@@ -275,23 +278,25 @@ class SearchManager:
         if not raw_name:
             raw_name = f"document_{idx+1}.pdf"
 
-        # Strip illegal characters for Windows/Mac
-        filename = re.sub(r'[\\/:*?"<>|]', "_", raw_name)
-        if not filename.lower().endswith('.pdf'):
-            filename += ".pdf"
+        # Strip illegal characters for Windows/Mac and limit length
+        clean_name = re.sub(r'[\\/:*?"<>|]', "_", raw_name)
+        base, ext = os.path.splitext(clean_name)
+        if not ext.lower().endswith('.pdf'):
+            ext = ".pdf"
+        filename = base[:150] + ext
 
         frame = ctk.CTkFrame(
             self.results_frame, corner_radius=14,
-            fg_color=("#FFFFFF", "gray20"),
-            border_width=1, border_color=("#ECE9E2", "gray30"),
+            fg_color=NamidaTheme.BG_CARD,
+            border_width=1, border_color=NamidaTheme.BORDER,
         )
         frame.grid_columnconfigure(0, weight=0)
         frame.grid_columnconfigure(1, weight=1)
         frame.grid_columnconfigure(2, weight=0)
 
         file_icon = ctk.CTkLabel(
-            frame, text="\U0001F4C4", font=ctk.CTkFont(size=18),
-            text_color=("#97C459", "#79B82B"), width=24,
+            frame, text="", width=24,
+            image=NamidaIcons.get("notes", size=18, light_color=NamidaTheme.ACCENT_PRIMARY[0], dark_color=NamidaTheme.ACCENT_PRIMARY[1]),
         )
         file_icon.grid(row=0, column=0, rowspan=2, sticky="w", padx=(15, 8), pady=12)
 
@@ -299,6 +304,7 @@ class SearchManager:
             frame,
             text=f"{idx + 1}. {filename}",
             font=PremiumTypography.heading_small(size=15),
+            text_color=NamidaTheme.TEXT_PRIMARY,
             anchor="w",
         )
         title_label.grid(row=0, column=1, sticky="w", padx=(0, 10), pady=(12, 5))
@@ -307,65 +313,68 @@ class SearchManager:
             frame,
             text=url[:70] + "…" if len(url) > 70 else url,
             font=PremiumTypography.monospace(size=10),
-            text_color="gray",
+            text_color=NamidaTheme.TEXT_MUTED,
             anchor="w",
         )
         url_label.grid(row=1, column=1, sticky="w", padx=(0, 10), pady=(0, 12))
 
         download_btn = ctk.CTkButton(
             frame,
-            text="↓",
-            font=ctk.CTkFont(size=18, weight="bold"),
+            text="",
             width=34, height=34, corner_radius=10,
             fg_color="transparent",
-            hover_color=("#E1EFC9", "gray30"),
-            text_color=("#639922", "#97C459"),
+            hover_color=NamidaTheme.ACCENT_HOVER,
+            image=NamidaIcons.get("download", size=16, light_color=NamidaTheme.ACCENT_PRIMARY[0], dark_color=NamidaTheme.ACCENT_PRIMARY[1]),
             command=lambda u=url, f=filename: self.quick_download(u, f),
         )
         download_btn.grid(row=0, column=2, rowspan=2, sticky="e", padx=(0, 12), pady=12)
+        download_btn.configure(cursor="hand2")
 
         select_cb = lambda e, u=url, f=filename: self.select_pdf(u, f)
-        frame.bind("<Button-1>", select_cb)
-        file_icon.bind("<Button-1>", select_cb)
-        title_label.bind("<Button-1>", select_cb)
-        url_label.bind("<Button-1>", select_cb)
-
-        def on_enter(e: Any, fr=frame, tl=title_label, ul=url_label) -> None:
-            fr.configure(
-                border_color=("#639922", "#97C459"),
-                fg_color=("#F3F1EA", "gray25"),
-            )
-            tl.grid_configure(pady=(10, 5))
-            ul.grid_configure(pady=(0, 10))
-
-        def on_leave(e: Any, fr=frame, tl=title_label, ul=url_label) -> None:
-            fr.configure(
-                border_color=("#ECE9E2", "gray30"),
-                fg_color=("#FFFFFF", "gray20"),
-            )
-            tl.grid_configure(pady=(12, 5))
-            ul.grid_configure(pady=(0, 12))
-
         for widget in (frame, file_icon, title_label, url_label):
-            widget.bind("<Enter>", on_enter)
-            widget.bind("<Leave>", on_leave)
+            widget.bind("<Button-1>", select_cb)
+            widget.configure(cursor="hand2")
+
+        frame._hovered = False
+
+        def on_enter(e: Any) -> None:
+            if not frame._hovered:
+                frame._hovered = True
+                frame.configure(
+                    border_color=NamidaTheme.ACCENT_PRIMARY,
+                    fg_color=NamidaTheme.BG_CARD_SECONDARY,
+                )
+
+        def on_leave(e: Any) -> None:
+            if frame._hovered:
+                # Check if mouse is actually outside the frame's boundaries
+                under_mouse = frame.winfo_containing(e.x_root, e.y_root)
+                if under_mouse:
+                    frame_path = str(frame)
+                    under_path = str(under_mouse)
+                    if under_path == frame_path or under_path.startswith(frame_path + "."):
+                        return
+                frame._hovered = False
+                frame.configure(
+                    border_color=NamidaTheme.BORDER,
+                    fg_color=NamidaTheme.BG_CARD,
+                )
+
+        frame.bind("<Enter>", on_enter)
+        frame.bind("<Leave>", on_leave)
 
         return frame
 
     def quick_download(self, url: str, filename: str) -> None:
         """Quick download a PDF from the search results."""
         self.select_pdf(url, filename)
-        self.app._download_pdf()
+        self.app.download_manager.download_pdf()
 
     def select_pdf(self, url: str, filename: str) -> None:
         """Select a PDF from the search results."""
         self.app.selected_pdf_url = url
         self.app.selected_pdf_title = filename
         self.app.status_label.configure(text=f"Selected: {filename}")
-        self.app.details_label.configure(
-            text=f"Filename: {filename}\nURL: {url[:50]}…"
-        )
-        self.app.executor.submit(self.app._preview_worker, url)
 
     def show_results(self) -> None:
         """Show the search results frame."""

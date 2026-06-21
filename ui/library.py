@@ -6,23 +6,47 @@ Manages the library grid view with thumbnails, tags, and recency grouping.
 from __future__ import annotations
 
 import datetime
+import hashlib
 import os
 from typing import Any
 
 import customtkinter as ctk
 
 from utils.typography import PremiumTypography
+from utils import NamidaTheme, NamidaIcons
 
 
 _RECENCY_BUCKET_ORDER = ["Today", "Yesterday", "This Week", "This Month", "Earlier"]
 
+# Spine colors for library cards (light, dark) tuples
+_SPINE_COLORS = [
+    ("#00A3C4", "#00E5FF"), # Neon Cyan
+    ("#7A00E0", "#9D00FF"), # Neon Purple
+    ("#0F6E56", "#00E676"), # Teal / Neon Green
+    ("#993C1D", "#FF9100"), # Terracotta / Neon Orange
+    ("#3B6D11", "#A8E6CF"), # Moss / Green
+    ("#FF5B5B", "#FF8A8A"), # Red / Coral
+    ("#FF9F43", "#FFC38A"), # Orange
+    ("#F1C40F", "#FFEAA7"), # Yellow
+    ("#3498DB", "#A2D5F2"), # Blue
+]
+
+
+def _get_spine_color(tag: str) -> tuple[str, str]:
+    if not tag:
+        return ("#D8E2ED", "#202A3C") # Using NamidaTheme.BORDER
+    val = sum(ord(c) for c in tag)
+    return _SPINE_COLORS[val % len(_SPINE_COLORS)]
+
 
 def _recency_bucket(mtime: float) -> str:
     """Determine the recency bucket for a file based on its modification time."""
-    now = datetime.datetime.now()
     dt = datetime.datetime.fromtimestamp(mtime)
-    days = (now.date() - dt.date()).days
-    if days <= 0:
+    today = datetime.date.today()
+    diff = today - dt.date()
+    days = diff.days
+
+    if days == 0:
         return "Today"
     if days == 1:
         return "Yesterday"
@@ -48,8 +72,8 @@ class LibraryManager:
             label_text="Library",
             label_font=PremiumTypography.heading_medium(),
             corner_radius=14,
-            fg_color="transparent",
-            label_text_color=("#2C2C2A", "gray90"),
+            fg_color=NamidaTheme.BG_MAIN,
+            label_text_color=NamidaTheme.TEXT_PRIMARY,
         )
         self.library_frame.grid(row=0, column=0, sticky="nsew")
         self.library_frame.grid_remove()
@@ -73,7 +97,7 @@ class LibraryManager:
         """Open the library view."""
         self.app.search_manager.hide_results()
         self.library_frame.grid()
-        self.library_btn.configure(fg_color=("#E1EFC9", "gray30"))
+        self.library_btn.configure(fg_color=NamidaTheme.ACCENT_HOVER)
         self.populate_library_grid()
         self.app.status_label.configure(text="Library")
 
@@ -81,7 +105,7 @@ class LibraryManager:
         """Close the library view and return to search results."""
         self.library_frame.grid_remove()
         self.app.search_manager.show_results()
-        self.library_btn.configure(fg_color=("#F3F1EA", "gray22"))
+        self.library_btn.configure(fg_color=NamidaTheme.BG_CARD)
         self.app.status_label.configure(text="Ready")
 
     def refresh_library_view_if_open(self) -> None:
@@ -109,7 +133,7 @@ class LibraryManager:
                 self.library_frame,
                 text="Your library is empty\nSearch and download, or drag a PDF in, to get started",
                 font=PremiumTypography.body_text(),
-                text_color="gray",
+                text_color=NamidaTheme.TEXT_MUTED,
                 justify="center",
             ).pack(pady=40)
             return
@@ -153,7 +177,7 @@ class LibraryManager:
 
         ctk.CTkLabel(
             section, text=header, font=PremiumTypography.heading_small(size=14),
-            text_color=("#2C2C2A", "gray90"), anchor="w",
+            text_color=NamidaTheme.TEXT_MUTED, anchor="w",
         ).pack(fill="x", padx=6, pady=(0, 8))
 
         grid = ctk.CTkFrame(section, fg_color="transparent")
@@ -167,47 +191,98 @@ class LibraryManager:
             card.grid(row=idx // cols, column=idx % cols, padx=6, pady=6, sticky="nsew")
 
     def create_library_card(self, parent, filepath: str, filename: str) -> ctk.CTkFrame:
-        """Create a library card for a PDF file."""
+        """Create a library card for a PDF file with colored spine stripe."""
         card = ctk.CTkFrame(
             parent, width=158, height=240, corner_radius=12,
-            fg_color=("#FFFFFF", "gray20"),
-            border_width=1, border_color=("#ECE9E2", "gray30"),
+            fg_color=NamidaTheme.BG_CARD,
+            border_width=1, border_color=NamidaTheme.BORDER,
         )
         card.grid_propagate(False)
-        card.grid_columnconfigure(0, weight=1)
+        card.grid_columnconfigure(0, weight=0)  # Spine
+        card.grid_columnconfigure(1, weight=1)  # Content
+
+        # Get spine color based on first tag
+        tags = self.app.tag_store.get(filepath)
+        first_tag = tags[0] if tags else ""
+        spine_color = _get_spine_color(first_tag)
+
+        # Colored spine stripe on left edge, inset to prevent corner bleeding
+        spine = ctk.CTkFrame(
+            card, width=6, corner_radius=3,
+            fg_color=spine_color,
+        )
+        spine.grid(row=0, column=0, rowspan=3, sticky="ns", padx=(6, 0), pady=12)
+
+        # Content frame
+        content_frame = ctk.CTkFrame(card, fg_color="transparent")
+        content_frame.grid(row=0, column=1, rowspan=3, sticky="nsew", padx=8, pady=8)
+        content_frame.grid_columnconfigure(0, weight=1)
 
         thumb_label = ctk.CTkLabel(
-            card, text="📄", font=ctk.CTkFont(size=40),
-            fg_color=("#F3F1EA", "gray25"), corner_radius=8,
-            width=138, height=164,
+            content_frame, text="",
+            image=NamidaIcons.get("library", size=48, light_color=NamidaTheme.ACCENT_PRIMARY[0], dark_color=NamidaTheme.ACCENT_PRIMARY[1]),
+            fg_color=NamidaTheme.BG_CARD_SECONDARY, corner_radius=8,
+            width=130, height=164,
         )
-        thumb_label.grid(row=0, column=0, padx=10, pady=(10, 6))
+        thumb_label.grid(row=0, column=0, padx=0, pady=(0, 6))
 
         display = filename if len(filename) <= 22 else filename[:19] + "…"
-        ctk.CTkLabel(
-            card, text=display, font=PremiumTypography.body_small(size=11),
-            anchor="w", wraplength=138, justify="left",
-        ).grid(row=1, column=0, padx=10, sticky="w")
+        title_label = ctk.CTkLabel(
+            content_frame, text=display, font=PremiumTypography.body_small(size=11),
+            text_color=NamidaTheme.TEXT_PRIMARY,
+            anchor="w", wraplength=130, justify="left",
+        )
+        title_label.grid(row=1, column=0, padx=0, sticky="w")
 
-        tags = self.app.tag_store.get(filepath)
         tag_text = " ".join(f"#{t}" for t in tags[:2]) if tags else ""
         tag_label = ctk.CTkLabel(
-            card, text=tag_text, font=PremiumTypography.body_small(size=9),
-            text_color=("#639922", "#97C459"), anchor="w",
+            content_frame, text=tag_text, font=PremiumTypography.body_small(size=9),
+            text_color=NamidaTheme.ACCENT_PRIMARY, anchor="w",
         )
-        tag_label.grid(row=2, column=0, padx=10, pady=(2, 6), sticky="w")
+        tag_label.grid(row=2, column=0, padx=0, pady=(2, 0), sticky="w")
 
         tag_btn = ctk.CTkButton(
-            card, text="🏷+", width=24, height=20, corner_radius=6,
-            font=ctk.CTkFont(size=10), fg_color=("#FFFFFF", "gray20"),
-            hover_color=("#E1EFC9", "gray30"), text_color="gray",
+            content_frame, text="", width=24, height=20, corner_radius=6,
+            fg_color=NamidaTheme.BG_CARD_SECONDARY,
+            hover_color=NamidaTheme.ACCENT_HOVER,
+            image=NamidaIcons.get("bookmark", size=10, light_color=NamidaTheme.TEXT_MUTED[0], dark_color=NamidaTheme.TEXT_MUTED[1]),
             command=lambda p=filepath: self.prompt_add_tag(p),
         )
-        tag_btn.place(relx=1.0, rely=0.0, anchor="ne", x=-6, y=6)
+        tag_btn.grid(row=2, column=0, padx=0, pady=(2, 0), sticky="e")
+        tag_btn.configure(cursor="hand2")
 
         open_cb = lambda e, p=filepath, f=filename: self.app._open_reader(p, f)
-        for w in (card, thumb_label):
+        for w in (card, content_frame, thumb_label, title_label, tag_label):
             w.bind("<Button-1>", open_cb)
+            w.configure(cursor="hand2")
+
+        card._hovered = False
+
+        def on_enter(e: Any) -> None:
+            if not card._hovered:
+                card._hovered = True
+                card.configure(
+                    border_color=NamidaTheme.ACCENT_PRIMARY,
+                    fg_color=NamidaTheme.BG_CARD_SECONDARY,
+                )
+
+        def on_leave(e: Any) -> None:
+            if card._hovered:
+                # Check if mouse is actually outside the card's boundaries
+                under_mouse = card.winfo_containing(e.x_root, e.y_root)
+                if under_mouse:
+                    card_path = str(card)
+                    under_path = str(under_mouse)
+                    if under_path == card_path or under_path.startswith(card_path + "."):
+                        return
+                card._hovered = False
+                card.configure(
+                    border_color=NamidaTheme.BORDER,
+                    fg_color=NamidaTheme.BG_CARD,
+                )
+
+        card.bind("<Enter>", on_enter)
+        card.bind("<Leave>", on_leave)
 
         self.app.executor.submit(self.load_library_thumbnail, filepath, thumb_label)
 

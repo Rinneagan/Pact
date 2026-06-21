@@ -6,6 +6,7 @@ Handles PDF downloads with progress tracking and queue management.
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 import customtkinter as ctk
@@ -39,10 +40,6 @@ class DownloadManager:
             self.app._show_error("No PDF selected")
             return
 
-        if not self.app.REQUESTS_AVAILABLE:
-            self.app._show_error("requests library not installed")
-            return
-
         active_count = sum(
             1 for info in self.app.active_downloads.values() if info.get("active")
         )
@@ -61,7 +58,22 @@ class DownloadManager:
     def download_worker(self, url: str, filename: str) -> None:
         """Worker thread for downloading a PDF."""
         save_dir = self.app.selected_directory or self.app.default_download_dir
-        save_path = os.path.join(save_dir, filename)
+        
+        # Security: Sanitize filename to prevent path traversal and ensure safe extension/length
+        clean_name = re.sub(r'[\\/:*?"<>|]', "_", filename)
+        base, ext = os.path.splitext(clean_name)
+        if not ext.lower().endswith(".pdf"):
+            ext = ".pdf"
+        clean_name = base[:150] + ext
+        
+        save_path = os.path.join(save_dir, clean_name)
+
+        # Security check: verify containment within the target directory
+        save_path = os.path.abspath(save_path)
+        real_save_dir = os.path.abspath(save_dir)
+        if not save_path.startswith(real_save_dir + os.sep) and save_path != real_save_dir:
+            self.app._ui(lambda: self.app._show_error("Invalid download destination"))
+            return
 
         # Prevent silent overwrites by appending a counter
         base, ext = os.path.splitext(save_path)
@@ -91,17 +103,37 @@ class DownloadManager:
                 return
 
             downloaded = 0
+            cancelled = False
             with open(save_path, "wb") as fh:
                 for chunk in response.iter_content(chunk_size=1024):
                     if not self.app.active_downloads.get(download_id, {}).get("active"):
+                        cancelled = True
                         break
                     downloaded += len(chunk)
+                    if downloaded > self.app.max_file_size:
+                        mb = self.app.max_file_size / (1024 * 1024)
+                        self.app._ui(lambda: self.app._show_error(f"File too large (exceeded {mb:.1f} MB limit)"))
+                        cancelled = True
+                        break
                     fh.write(chunk)
                     progress = (downloaded / total_size * 100) if total_size else 0
                     self.app._ui(lambda p=progress: self.update_download_progress(download_id, p))
 
+            if cancelled or not self.app.active_downloads.get(download_id, {}).get("active"):
+                if os.path.exists(save_path):
+                    try:
+                        os.remove(save_path)
+                    except OSError:
+                        pass
+                self.app._ui(lambda: self.remove_download_from_queue(download_id))
+                return
+
             if self.app.validate_pdf_file and not self.app.validate_pdf_file(save_path):
-                os.remove(save_path)
+                if os.path.exists(save_path):
+                    try:
+                        os.remove(save_path)
+                    except OSError:
+                        pass
                 self.app._ui(lambda: self.app._show_error("Downloaded file is not a valid PDF"))
                 self.app._ui(lambda: self.remove_download_from_queue(download_id))
                 return

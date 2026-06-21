@@ -1,16 +1,11 @@
-"""
-Reading stats functionality for Pact PDF application.
-Displays reading statistics including documents finished, longest read, and a sparkline.
-"""
-
-from __future__ import annotations
-
 import tkinter as tk
 from typing import Any
 
 import customtkinter as ctk
 
 from utils.typography import PremiumTypography
+from utils.theme import NamidaTheme
+from utils.icons import NamidaIcons
 
 
 class ReadingStatsManager:
@@ -37,11 +32,19 @@ class ReadingStatsManager:
         longest = self.app.stats_store.longest_read()
         daily = self.app.stats_store.last_n_days_pages(7)
 
+        title_frame = ctk.CTkFrame(self.stats_frame, fg_color="transparent")
+        title_frame.grid(row=0, column=0, sticky="w", pady=(0, 4))
+        
         ctk.CTkLabel(
-            self.stats_frame, text="Reading Log",
-            font=PremiumTypography.heading_small(size=12),
-            text_color=("#2C2C2A", "gray90"), anchor="w",
-        ).grid(row=0, column=0, sticky="w", pady=(0, 4))
+            title_frame, text="",
+            image=NamidaIcons.get("notes", size=14, light_color=NamidaTheme.TEXT_MUTED[0], dark_color=NamidaTheme.TEXT_MUTED[1])
+        ).pack(side="left", padx=(0, 6))
+
+        ctk.CTkLabel(
+            title_frame, text="Reading Log",
+            font=PremiumTypography.display_small(size=12),
+            text_color=NamidaTheme.TEXT_MUTED,
+        ).pack(side="left")
 
         if finished_count == 0 and not longest:
             summary = "Nothing finished yet"
@@ -55,7 +58,7 @@ class ReadingStatsManager:
         ctk.CTkLabel(
             self.stats_frame, text=summary,
             font=PremiumTypography.body_small(size=11),
-            text_color="gray", anchor="w", justify="left",
+            text_color=NamidaTheme.TEXT_MUTED, anchor="w", justify="left",
         ).grid(row=1, column=0, sticky="w", pady=(0, 6))
 
         sparkline = self.draw_sparkline(self.stats_frame, daily)
@@ -64,8 +67,9 @@ class ReadingStatsManager:
     def draw_sparkline(self, parent: Any, values: list[int]) -> tk.Canvas:
         """Draw a sparkline chart showing pages read over the last N days."""
         width, height, bar_w, gap = 168, 28, 16, 4
-        bg = "gray17" if self.app.is_dark_theme else "#F3F1EA"
-        bar_color = "#97C459" if self.app.is_dark_theme else "#639922"
+        bg = NamidaTheme.BG_SIDEBAR[1] if self.app.is_dark_theme else NamidaTheme.BG_SIDEBAR[0]
+        primary_color = NamidaTheme.ACCENT_PRIMARY[1] if self.app.is_dark_theme else NamidaTheme.ACCENT_PRIMARY[0]
+        secondary_color = NamidaTheme.ACCENT_SECONDARY[1] if self.app.is_dark_theme else NamidaTheme.ACCENT_SECONDARY[0]
 
         canvas = tk.Canvas(parent, width=width, height=height, highlightthickness=0, bg=bg)
         max_val = max(values) if max(values) > 0 else 1
@@ -75,5 +79,9 @@ class ReadingStatsManager:
             x1 = x0 + bar_w
             y1 = height
             y0 = height - bar_h if v > 0 else height - 2
-            canvas.create_rectangle(x0, y0, x1, y1, fill=bar_color, outline="")
+            
+            # Use secondary color (purple) for normal read days, primary (cyan) for the max reading day
+            is_max = (v == max(values) and v > 0)
+            fill_color = primary_color if is_max else (secondary_color if v > 0 else NamidaTheme.BORDER[1] if self.app.is_dark_theme else NamidaTheme.BORDER[0])
+            canvas.create_rectangle(x0, y0, x1, y1, fill=fill_color, outline="")
         return canvas

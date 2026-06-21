@@ -6,6 +6,7 @@ Handles importing PDFs by dragging them into the application window.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from typing import Any
 
@@ -48,10 +49,20 @@ class DragDropManager:
     def on_files_dropped(self, event: Any) -> None:
         """Handle files dropped onto the application window."""
         self.app.main_view_frame.configure(border_width=0)
+        paths = []
         try:
-            paths = self.app.root.tk.splitlist(event.data)
+            raw_paths = self.app.root.tk.splitlist(event.data)
+            for p in raw_paths:
+                p_clean = p.strip().strip('{}').strip()
+                if p_clean:
+                    paths.append(p_clean)
         except Exception:
-            paths = [event.data]
+            import re
+            matches = re.findall(r'\{([^}]+)\}|(\S+)', event.data)
+            for m1, m2 in matches:
+                p_clean = (m1 or m2).strip().strip('{}').strip()
+                if p_clean:
+                    paths.append(p_clean)
 
         pdfs = [p for p in paths if p.lower().endswith(".pdf")]
         if not pdfs:
@@ -75,7 +86,23 @@ class DragDropManager:
 
             dest_dir = self.app._get_downloads_dir()
             os.makedirs(dest_dir, exist_ok=True)
-            dest_path = os.path.join(dest_dir, os.path.basename(src_path))
+            
+            # Security: Sanitize the destination filename to prevent traversal/illegal characters
+            raw_name = os.path.basename(src_path)
+            clean_name = re.sub(r'[\\/:*?"<>|]', "_", raw_name)
+            base, ext = os.path.splitext(clean_name)
+            if not ext.lower().endswith(".pdf"):
+                ext = ".pdf"
+            clean_name = base[:150] + ext
+
+            dest_path = os.path.join(dest_dir, clean_name)
+
+            # Security check: verify containment within the destination directory
+            dest_path = os.path.abspath(dest_path)
+            real_dest_dir = os.path.abspath(dest_dir)
+            if not dest_path.startswith(real_dest_dir + os.sep) and dest_path != real_dest_dir:
+                self.app._ui(lambda: self.app._show_error("Invalid destination path"))
+                return
 
             if os.path.abspath(src_path) != os.path.abspath(dest_path):
                 base, ext = os.path.splitext(dest_path)
