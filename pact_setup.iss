@@ -3,7 +3,7 @@
 
 #define MyAppName "Pact"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Namida"
+#define MyAppPublisher "Ebenezer Essel"
 #define MyAppExeName "Pact.exe"
 
 [Setup]
