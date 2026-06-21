@@ -39,6 +39,10 @@ function initApp() {
         setThemeMode(theme || 'dark');
     });
 
+    // Load Wallpaper
+    const savedWallpaper = localStorage.getItem('pact_wallpaper') || 'none';
+    changeWallpaper(savedWallpaper);
+
     // 2. Load lists & stats
     refreshLibrary();
     refreshContinueReading();
@@ -256,20 +260,45 @@ function selectAndDownloadPdf(url, title) {
     // Standard double action: select and download
     triggerDownload(url, title);
 }
-
 function cancelDownload(downloadId) {
     pywebview.api.cancel_download(downloadId).then(() => {
         showToast('Download cancelled');
+        if (appState.downloads && appState.downloads[downloadId]) {
+            delete appState.downloads[downloadId];
+        }
     });
 }
 
 function startDownloadsPolling() {
+    if (!appState.downloads) {
+        appState.downloads = {};
+    }
+    
     setInterval(() => {
         pywebview.api.get_active_downloads().then(downloads => {
             const container = document.getElementById('downloads-list');
             const shelf = document.getElementById('downloads-shelf');
             
-            const keys = Object.keys(downloads || {});
+            // Merge response into appState.downloads
+            if (downloads) {
+                Object.keys(downloads).forEach(id => {
+                    const item = downloads[id];
+                    if (item.failed) {
+                        showToast(`Download failed: ${item.error_msg}`, true);
+                        delete appState.downloads[id];
+                    } else if (!item.active && !item.complete) {
+                        delete appState.downloads[id];
+                    } else {
+                        // If it just transitioned to complete, refresh the library grid
+                        if (item.complete && (!appState.downloads[id] || !appState.downloads[id].complete)) {
+                            refreshLibrary();
+                        }
+                        appState.downloads[id] = item;
+                    }
+                });
+            }
+            
+            const keys = Object.keys(appState.downloads);
             if (keys.length === 0) {
                 shelf.classList.add('hidden');
                 container.innerHTML = '';
@@ -277,44 +306,77 @@ function startDownloadsPolling() {
             }
             
             shelf.classList.remove('hidden');
-            container.innerHTML = '';
-
-            keys.forEach(id => {
-                const item = downloads[id];
-                const card = document.createElement('div');
-                card.className = 'download-card';
-
-                if (item.complete) {
-                    card.innerHTML = `
-                        <div class="download-info">
-                            <div class="download-title">${item.filename}</div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" style="width: 100%; background-color: #639922;"></div>
-                            </div>
-                        </div>
-                        <div class="download-actions">
-                            <button class="read-btn" onclick="openReader('${item.save_path}', '${item.filename}')">📖 Read</button>
-                        </div>
-                    `;
-                } else {
-                    const pct = Math.round(item.progress || 0);
-                    card.innerHTML = `
-                        <div class="download-info">
-                            <div class="download-title">${item.filename} (${pct}%)</div>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" style="width: ${pct}%"></div>
-                            </div>
-                        </div>
-                        <div class="download-actions">
-                            <button class="cancel-btn" onclick="cancelDownload(${id})" title="Cancel Download">✕</button>
-                        </div>
-                    `;
+            
+            // Remove DOM cards that are no longer in appState.downloads
+            const existingCards = container.querySelectorAll('.download-card');
+            existingCards.forEach(card => {
+                const cardId = card.getAttribute('data-download-id');
+                if (!appState.downloads[cardId]) {
+                    card.remove();
                 }
-                container.appendChild(card);
+            });
+
+            // Add or update cards without rebuilding DOM structure unnecessarily
+            keys.forEach(id => {
+                const item = appState.downloads[id];
+                let card = container.querySelector(`.download-card[data-download-id="${id}"]`);
+                
+                if (!card) {
+                    card = document.createElement('div');
+                    card.className = 'download-card';
+                    card.setAttribute('data-download-id', id);
+                    container.appendChild(card);
+                }
+
+                const currentStatus = card.getAttribute('data-status');
+                const targetStatus = item.complete ? 'complete' : `downloading-${Math.round(item.progress || 0)}`;
+
+                if (currentStatus !== targetStatus) {
+                    card.setAttribute('data-status', targetStatus);
+                    if (item.complete) {
+                        card.innerHTML = `
+                            <div class="download-info">
+                                <div class="download-title">${item.filename}</div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: 100%; background-color: #639922;"></div>
+                                </div>
+                            </div>
+                            <div class="download-actions" style="display: flex; gap: 4px; align-items: center;">
+                                <button class="read-btn" onclick="openReaderAndClearShelf('${id}', '${item.save_path.replace(/\\/g, '\\\\')}', '${item.filename.replace(/'/g, "\\'")}')">📖 Read</button>
+                                <button class="cancel-btn" onclick="dismissCompletedDownload('${id}')" title="Dismiss">✕</button>
+                            </div>
+                        `;
+                    } else {
+                        const pct = Math.round(item.progress || 0);
+                        card.innerHTML = `
+                            <div class="download-info">
+                                <div class="download-title">${item.filename} (${pct}%)</div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                            <div class="download-actions">
+                                <button class="cancel-btn" onclick="cancelDownload('${id}')" title="Cancel Download">✕</button>
+                            </div>
+                        `;
+                    }
+                }
             });
         });
     }, 500);
 }
+
+function openReaderAndClearShelf(id, filepath, filename) {
+    dismissCompletedDownload(id);
+    openReader(filepath, filename);
+}
+
+function dismissCompletedDownload(id) {
+    if (appState.downloads && appState.downloads[id]) {
+        delete appState.downloads[id];
+    }
+}
+
 
 /* LIBRARY GRID */
 function refreshLibrary() {
@@ -586,6 +648,11 @@ function refreshStats() {
             });
         }
     });
+
+    // Load contribution heatmap activity
+    pywebview.api.get_heatmap_data().then(data => {
+        renderHeatmap(data);
+    });
 }
 
 /* PDF READER VIEW */
@@ -607,12 +674,26 @@ function openReader(filepath, title) {
         loadReaderToc();
         loadReaderRelated();
         loadReaderNotes();
+        loadReaderKeywords();
     });
 }
 
 function closeReader() {
     appState.readerActive = false;
     document.getElementById('reader-view').classList.add('hidden');
+    
+    // Reset focus mode if active
+    const reader = document.getElementById('reader-view');
+    if (reader && reader.classList.contains('focus-mode')) {
+        reader.classList.remove('focus-mode');
+        const btn = document.getElementById('focus-mode-btn');
+        if (btn) {
+            btn.classList.remove('active');
+            btn.style.color = '';
+        }
+    }
+    clearKeywordSearch();
+
     pywebview.api.close_document();
     
     // Refresh lists on exit
@@ -842,4 +923,177 @@ function deleteBookmark(pageIndex) {
         loadReaderNotes();
         updateBookmarkButtonUI();
     });
+}
+
+/* PREMIUM ADDITIONS IMPLEMENTATION */
+
+function changeWallpaper(name) {
+    const body = document.body;
+    const bg = document.getElementById('app-bg');
+    if (!bg) return;
+    
+    // Clear existing classes
+    bg.className = '';
+    body.classList.remove('has-wallpaper');
+    
+    if (name && name !== 'none') {
+        bg.classList.add(name);
+        body.classList.add('has-wallpaper');
+        localStorage.setItem('pact_wallpaper', name);
+    } else {
+        localStorage.removeItem('pact_wallpaper');
+    }
+    
+    // Sync selector value
+    const select = document.getElementById('wallpaper-select');
+    if (select) select.value = name || 'none';
+}
+
+function toggleFocusMode() {
+    const reader = document.getElementById('reader-view');
+    if (!reader) return;
+    
+    const isFocus = reader.classList.toggle('focus-mode');
+    const btn = document.getElementById('focus-mode-btn');
+    
+    if (isFocus) {
+        btn.classList.add('active');
+        btn.style.color = 'var(--accent-primary)';
+        showToast('Entering Deep Focus Mode. Hover near top to show toolbar. Press Esc to exit.');
+    } else {
+        btn.classList.remove('active');
+        btn.style.color = '';
+        showToast('Exited Focus Mode');
+    }
+}
+
+// Global Esc key listener for exiting focus mode
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        const reader = document.getElementById('reader-view');
+        if (reader && reader.classList.contains('focus-mode')) {
+            toggleFocusMode();
+        }
+    }
+});
+
+function renderHeatmap(data) {
+    const container = document.getElementById('stats-heatmap');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 20px; grid-column: 1/-1;">No activity data available</div>';
+        return;
+    }
+    
+    // Pad start of the grid to align days of week to rows (Sun-Sat)
+    const firstDate = new Date(data[0].date);
+    const padCount = firstDate.getDay(); // 0 is Sunday, 1 is Monday, etc.
+    for (let p = 0; p < padCount; p++) {
+        const padCell = document.createElement('div');
+        padCell.className = 'heatmap-cell';
+        padCell.style.visibility = 'hidden';
+        container.appendChild(padCell);
+    }
+    
+    data.forEach(item => {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        
+        let level = 0;
+        if (item.count > 0 && item.count <= 2) {
+            level = 1;
+        } else if (item.count > 2 && item.count <= 5) {
+            level = 2;
+        } else if (item.count > 5 && item.count <= 10) {
+            level = 3;
+        } else if (item.count > 10) {
+            level = 4;
+        }
+        
+        cell.classList.add(`level-${level}`);
+        
+        let dateStr = item.date;
+        try {
+            const d = new Date(item.date);
+            dateStr = d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        } catch (e) {}
+        
+        cell.title = `${dateStr}: ${item.count} page${item.count === 1 ? '' : 's'} read`;
+        container.appendChild(cell);
+    });
+}
+
+function loadReaderKeywords() {
+    const container = document.getElementById('keywords-cloud');
+    const matchesContainer = document.getElementById('keyword-matches');
+    if (!container) return;
+    
+    container.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); padding: 10px;">Extracting keywords...</div>';
+    matchesContainer.classList.add('hidden');
+    
+    pywebview.api.get_keywords(appState.readerFilepath).then(keywords => {
+        container.innerHTML = '';
+        
+        if (!keywords || keywords.length === 0) {
+            container.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); padding: 10px;">No keywords extracted</div>';
+            return;
+        }
+        
+        keywords.forEach(item => {
+            const tag = document.createElement('span');
+            tag.className = 'keyword-tag';
+            
+            // Weight scaling (weight is 0 to 10)
+            const fontSize = 11 + (item.weight * 0.8);
+            tag.style.fontSize = `${fontSize}px`;
+            
+            tag.textContent = item.word;
+            tag.onclick = () => selectKeyword(item.word, tag);
+            
+            container.appendChild(tag);
+        });
+    });
+}
+
+function selectKeyword(word, tagElement) {
+    document.querySelectorAll('#keywords-cloud .keyword-tag').forEach(t => t.classList.remove('active'));
+    if (tagElement) {
+        tagElement.classList.add('active');
+    }
+    
+    const matchesContainer = document.getElementById('keyword-matches');
+    const pagesList = document.getElementById('keyword-pages-list');
+    const titleSpan = document.getElementById('keyword-matches-title');
+    
+    titleSpan.textContent = `Pages with "${word}"`;
+    pagesList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); grid-column: 1/-1; padding: 10px;">Searching...</div>';
+    matchesContainer.classList.remove('hidden');
+    
+    pywebview.api.search_word_pages(appState.readerFilepath, word).then(pages => {
+        pagesList.innerHTML = '';
+        
+        if (!pages || pages.length === 0) {
+            pagesList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); grid-column: 1/-1; padding: 10px;">No occurrences found</div>';
+            return;
+        }
+        
+        pages.forEach(pNum => {
+            const btn = document.createElement('button');
+            btn.className = 'keyword-page-btn';
+            btn.textContent = `p. ${pNum}`;
+            btn.onclick = () => {
+                appState.readerPage = pNum - 1;
+                refreshReaderPage();
+            };
+            pagesList.appendChild(btn);
+        });
+    });
+}
+
+function clearKeywordSearch() {
+    document.querySelectorAll('#keywords-cloud .keyword-tag').forEach(t => t.classList.remove('active'));
+    const matchesContainer = document.getElementById('keyword-matches');
+    if (matchesContainer) matchesContainer.classList.add('hidden');
 }
