@@ -251,9 +251,12 @@ def _get_with_retry(
 
     Returns the Response on success, None if all retries are exhausted.
     """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+    }
     for attempt in range(retries):
         try:
-            response = requests.get(url, params=params, timeout=TIMEOUT)
+            response = requests.get(url, params=params, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as exc:
