@@ -1,4 +1,4 @@
-# Pact (PDFfetch)
+# Pact
 
 A premium, secure desktop application for searching, previewing, downloading, and reading PDF files. The application is built on a modern hybrid stack: a robust **Python backend** (for API coordination, file processing, and local database stores) bound to a stunning **HTML5/CSS3/JavaScript frontend** with a glassmorphic aesthetic served locally via **`pywebview`**.
 
@@ -55,7 +55,7 @@ A premium, secure desktop application for searching, previewing, downloading, an
 The project has been refactored to separate the UI layer from Python core operations, communicating via `pywebview`'s JSON-RPC bridge API.
 
 ```
-PDFfetch/
+Pact/
 ├── config.py           # Application settings (timeouts, size caps, directories)
 ├── crawler.py          # Backend PDF crawler (SerpApi wrapper, document validations)
 ├── app.py              # Main coordinator & JSON-RPC Bridge API (PactAPI)
@@ -72,7 +72,7 @@ PDFfetch/
 └── assets/             # Branding logs and font assets
 ```
 
-### Bridge API Methods ([app.py](file:///c:/Users/AvaricE/Documents/PDFfetch/app.py))
+### Bridge API Methods ([app.py](app.py))
 `app.py` exposes the `PactAPI` class to the frontend context, allowing JavaScript to call:
 * `search(query)`: Query PDFs via the crawler.
 * `download(url, title)`: Enqueue a file for background download.
@@ -93,8 +93,8 @@ PDFfetch/
 ### Installation
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Rinneagan/PDFfetch.git
-   cd PDFfetch
+   git clone https://github.com/Rinneagan/Pact.git
+   cd Pact
    ```
 2. **Install requirements**
    ```bash
