@@ -418,6 +418,84 @@ class PactAPI:
         """Delete bookmark/note."""
         self.bookmark_store.remove(filepath, page)
 
+    def get_keywords(self, filepath: str) -> list[dict[str, Any]]:
+        """Extract top keywords from the PDF for side-panel keyword cloud navigation."""
+        try:
+            doc = self._get_doc(filepath)
+            pages_to_read = min(len(doc), 15)
+            text = ""
+            for i in range(pages_to_read):
+                text += doc.load_page(i).get_text()
+            
+            # Simple tokenization
+            words = re.findall(r"\b[a-zA-Z]{4,15}\b", text.lower())
+            
+            stopwords = {
+                "this", "that", "with", "from", "your", "them", "then", "there", "their", "they",
+                "here", "have", "were", "been", "would", "could", "should", "will", "does", "done",
+                "about", "above", "after", "again", "against", "other", "some", "such", "than", "then",
+                "their", "these", "those", "under", "until", "upon", "very", "when", "where", "which",
+                "while", "who", "whom", "why", "with", "would", "page", "number", "figure", "table"
+            }
+            
+            filtered = [w for w in words if w not in stopwords]
+            
+            # Count frequencies
+            freq: dict[str, int] = {}
+            for w in filtered:
+                freq[w] = freq.get(w, 0) + 1
+                
+            sorted_freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+            top_words = sorted_freq[:25]
+            if not top_words:
+                return []
+                
+            max_count = top_words[0][1]
+            return [
+                {
+                    "word": w,
+                    "count": c,
+                    "weight": round((c / max_count) * 10)
+                }
+                for w, c in top_words
+            ]
+        except Exception as exc:
+            print(f"Keywords extraction error: {exc}")
+            return []
+
+    def search_word_pages(self, filepath: str, word: str) -> list[int]:
+        """Search which page numbers contain the selected word inside the PDF."""
+        try:
+            doc = self._get_doc(filepath)
+            matches = []
+            word_lower = word.lower()
+            for page_num in range(len(doc)):
+                text = doc.load_page(page_num).get_text().lower()
+                if word_lower in text:
+                    matches.append(page_num + 1)
+            return matches
+        except Exception:
+            return []
+
+    def get_heatmap_data(self) -> list[dict[str, Any]]:
+        """Return daily page log counts for the last 30 weeks (210 days) for contribution heatmap rendering."""
+        try:
+            import datetime
+            today = datetime.date.today()
+            daily_pages = self.stats_store._data.get("daily_pages", {})
+            
+            out = []
+            for i in range(209, -1, -1):
+                day = (today - datetime.timedelta(days=i)).isoformat()
+                count = daily_pages.get(day, 0)
+                out.append({
+                    "date": day,
+                    "count": count
+                })
+            return out
+        except Exception:
+            return []
+
     def open_external(self, filepath: str) -> None:
         """Securely invoke system handler to view PDF."""
         try:
