@@ -38,6 +38,13 @@ PACT_DIR = os.path.join(os.path.expanduser("~"), ".pact")
 THEME_FILE = os.path.join(PACT_DIR, "theme.json")
 
 
+def get_resource_path(relative_path: str) -> str:
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    import sys
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
+
 class PactAPI:
     """JSON-RPC Bridge API exposed to pywebview front-end."""
 
@@ -95,9 +102,8 @@ class PactAPI:
 
     def get_logos(self) -> dict[str, str]:
         """Fetch base64 strings of the original light and dark logos."""
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        light_path = os.path.join(current_dir, "assets", "P-logo-design-vector-Graphics-16857419-1-1-580x386.jpg")
-        dark_path = os.path.join(current_dir, "assets", "Black.png")
+        light_path = get_resource_path(os.path.join("assets", "P-logo-design-vector-Graphics-16857419-1-1-580x386.jpg"))
+        dark_path = get_resource_path(os.path.join("assets", "Black.png"))
         
         out = {"light": "", "dark": ""}
         try:
@@ -537,8 +543,7 @@ def main() -> None:
     api = PactAPI()
     
     # Locate absolute path to web/ directory
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    web_dir = os.path.join(current_dir, "web")
+    web_dir = get_resource_path("web")
     
     # Initialize pywebview window
     webview.create_window(
