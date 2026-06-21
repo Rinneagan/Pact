@@ -542,6 +542,16 @@ class PactAPI:
 def main() -> None:
     api = PactAPI()
     
+    # Create template .env if it doesn't exist in user profile
+    user_env_file = os.path.join(PACT_DIR, ".env")
+    if not os.path.exists(user_env_file):
+        try:
+            os.makedirs(PACT_DIR, exist_ok=True)
+            with open(user_env_file, "w", encoding="utf-8") as fh:
+                fh.write("# Pact API Configuration\n# Enter your SerpApi key below to enable PDF search:\nSERPAPI_KEY=\n")
+        except Exception:
+            pass
+            
     # Locate absolute path to web/ directory
     web_dir = get_resource_path("web")
     
